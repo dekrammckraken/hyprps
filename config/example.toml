@@ -1,0 +1,4 @@
+#pad device
+dev_block = "/dev/input/event23"
+#favourite launcher
+launcher= "steam"
