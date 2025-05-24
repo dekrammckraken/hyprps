@@ -1,4 +1,4 @@
-use std::fs;
+use std::{fs, io};
 use std::os::fd::{AsFd};
 use std::process::Command;
 use nix::poll::{poll, PollFd, PollFlags, PollTimeout};
@@ -13,6 +13,7 @@ const INVALID_HOME_DIR: &str = "Cannot access to home";
 struct Config {
     dev_block: String,
     launcher: String,
+    mac: String,
 }
 fn get_config() -> Config {
     let mut config_path = home_dir().expect(INVALID_HOME_DIR);
@@ -27,16 +28,27 @@ fn ensure_launcher_running(cfg: &Config) {
         .map_or(false, |output| !output.stdout.is_empty());
 
     if !running {
-        Command::new(&cfg.launcher)
+        let mut launcher = Command::new(&cfg.launcher)
             .spawn()
             .expect("Failed to start launcher");
-        println!("Launcher started successfully");
-    } else {
-        println!("Launcher already started successfully");
+
+        let _ = launcher.wait().expect("Failed to wait on launcher");
+        disconnect_device(&cfg.mac).expect("Failed to disconnect device");
     }
 }
+fn disconnect_device(mac: &str) -> io::Result<()> {
+    let status = Command::new("bluetoothctl")
+        .arg("disconnect")
+        .arg(mac)
+        .status()?;
 
-fn main() -> std::io::Result<()> {
+    if status.success() {
+        Ok(())
+    } else {
+        Err(io::Error::new(io::ErrorKind::Other, "Disconnect failed"))
+    }
+}
+fn main() -> io::Result<()> {
 
     let cfg = get_config();
 
@@ -53,19 +65,19 @@ fn main() -> std::io::Result<()> {
         if let Some(event) = iter.next() {
             if let Some(action) = event.action() {
                 let dev = event.device();
-                let devnode = dev.devnode().map(|d| d.to_string_lossy());
+                let node = dev.devnode().map(|d| d.to_string_lossy());
 
                 if action == "add" {
-                    if let Some(devnode) = devnode {
-                        if devnode.as_ref() == cfg.dev_block {
+                    if let Some(node) = node {
+                        if node.as_ref() == cfg.dev_block {
                             ensure_launcher_running(&cfg);
                         }
                     }
                 }
                 else if action == "remove" {
-                    if let Some(devnode) = devnode {
-                        if devnode.as_ref() == cfg.dev_block {
-                            println!("Dev block removed!");
+                    if let Some(node) = node {
+                        if node.as_ref() == cfg.dev_block {
+
                         }
                     }
                 }
