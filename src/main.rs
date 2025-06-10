@@ -1,9 +1,11 @@
-use std::{fs, io};
-use std::os::fd::{AsFd};
-use std::process::Command;
-use nix::poll::{poll, PollFd, PollFlags, PollTimeout};
-use serde::Deserialize;
 use dirs::home_dir;
+use log::{LevelFilter, error, info};
+use nix::poll::{PollFd, PollFlags, PollTimeout, poll};
+use serde::Deserialize;
+use std::os::fd::AsFd;
+use std::process::Command;
+use std::{fs, io};
+use systemd_journal_logger::JournalLog;
 
 const CFG_FILE: &str = ".config/hyprps/config";
 const INVALID_CONFIG_FILE: &str = "Invalid configuration file";
@@ -25,7 +27,8 @@ fn ensure_launcher_running(cfg: &Config) {
     let running = Command::new("pgrep")
         .arg(&cfg.launcher)
         .output()
-        .map_or(false, |output| !output.stdout.is_empty());
+        .map(|output| !output.stdout.is_empty())
+        .unwrap_or(false);
 
     if !running {
         let mut launcher = Command::new(&cfg.launcher)
@@ -43,14 +46,20 @@ fn disconnect_device(mac: &str) -> io::Result<()> {
         .status()?;
 
     if status.success() {
+        info!("{} device disconnected!", mac);
         Ok(())
     } else {
-        Err(io::Error::new(io::ErrorKind::Other, "Disconnect failed"))
+        error!("{} error while disconnecting device...", mac);
+        Err(io::Error::other("Disconnect failed"))
     }
 }
 fn main() -> io::Result<()> {
+    JournalLog::new().unwrap().install().unwrap();
+    log::set_max_level(LevelFilter::Info);
 
     let cfg = get_config();
+
+    info!("{} Starting hyprps monitoring", cfg.dev_block);
 
     let monitor = udev::MonitorBuilder::new()?
         .match_subsystem("input")?
@@ -70,18 +79,19 @@ fn main() -> io::Result<()> {
                 if action == "add" {
                     if let Some(node) = node {
                         if node.as_ref() == cfg.dev_block {
+                            info!("{} added!", cfg.dev_block);
                             ensure_launcher_running(&cfg);
                         }
                     }
-                }
-                else if action == "remove" {
+                } else if action == "remove" {
                     if let Some(node) = node {
                         if node.as_ref() == cfg.dev_block {
-
+                            info!("{} removed!", cfg.dev_block);
                         }
                     }
                 }
             }
         }
+        info!("hyprps has been closed.");
     }
 }

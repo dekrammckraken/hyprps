@@ -21,3 +21,6 @@ cp ./target/release/hyprps /your/desired/path
 Add this line to your Hyprland config: `exec-once = hyprps`
 
 **Make sure `hyprps` is in your PATH.**
+
+## See log
+journalctl -e -t hyprps -f
