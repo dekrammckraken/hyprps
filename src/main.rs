@@ -15,6 +15,7 @@ const INVALID_HOME_DIR: &str = "Cannot access to home";
 struct Config {
     dev_block: String,
     launcher: String,
+    lounge: Option<String>,
     mac: String,
 }
 fn get_config() -> Config {
@@ -31,11 +32,16 @@ fn ensure_launcher_running(cfg: &Config) {
         .unwrap_or(false);
 
     if !running {
-        let mut launcher = Command::new(&cfg.launcher)
-            .spawn()
-            .expect("Failed to start launcher");
+        
+        let mut launcher_commmand = Command::new(&cfg.launcher);
+        
+        if let Some(lounge_param) = &cfg.lounge {
+            launcher_commmand.arg(lounge_param);
+        }
 
+        let mut launcher = launcher_commmand.spawn().expect("Failed to start launcher");
         let _ = launcher.wait().expect("Failed to wait on launcher");
+        
         disconnect_device(&cfg.mac).expect("Failed to disconnect device");
     }
 }
