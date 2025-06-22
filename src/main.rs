@@ -1,48 +1,35 @@
-use dirs::home_dir;
 use log::{LevelFilter, error, info};
 use nix::poll::{PollFd, PollFlags, PollTimeout, poll};
-use serde::Deserialize;
 use std::os::fd::AsFd;
 use std::process::Command;
-use std::{fs, io};
+use std::{io};
 use systemd_journal_logger::JournalLog;
 
 const CFG_FILE: &str = ".config/hyprps/config";
-const INVALID_CONFIG_FILE: &str = "Invalid configuration file";
-const INVALID_HOME_DIR: &str = "Cannot access to home";
 
-#[derive(Deserialize)]
-struct Config {
-    dev_block: String,
-    launcher: String,
-    lounge: Option<String>,
-    mac: String,
-}
-fn get_config() -> Config {
-    let mut config_path = home_dir().expect(INVALID_HOME_DIR);
-    config_path.push(CFG_FILE);
-    let config_string = fs::read_to_string(config_path).expect(INVALID_CONFIG_FILE);
-    toml::from_str(&config_string).expect(INVALID_CONFIG_FILE)
-}
+pub mod config;
+
+use config::Config;
+
 fn ensure_launcher_running(cfg: &Config) {
     let running = Command::new("pgrep")
-        .arg(&cfg.launcher)
+        .arg(&cfg.get_launcher())
         .output()
         .map(|output| !output.stdout.is_empty())
         .unwrap_or(false);
 
     if !running {
         
-        let mut launcher_commmand = Command::new(&cfg.launcher);
+        let mut launcher_commmand = Command::new(&cfg.get_launcher());
         
-        if let Some(lounge_param) = &cfg.lounge {
+        if let Some(lounge_param) = &cfg.get_lounge() {
             launcher_commmand.arg(lounge_param);
         }
 
         let mut launcher = launcher_commmand.spawn().expect("Failed to start launcher");
         let _ = launcher.wait().expect("Failed to wait on launcher");
         
-        disconnect_device(&cfg.mac).expect("Failed to disconnect device");
+        disconnect_device(&cfg.get_mac()).expect("Failed to disconnect device");
     }
 }
 fn disconnect_device(mac: &str) -> io::Result<()> {
@@ -63,9 +50,15 @@ fn main() -> io::Result<()> {
     JournalLog::new().unwrap().install().unwrap();
     log::set_max_level(LevelFilter::Info);
 
-    let cfg = get_config();
+    let cfg = Config::from_file(CFG_FILE);
+    
+    if !cfg.validate() {
+        eprintln!("{}", "Invalid configuration");
+        std::process::exit(1)
+    }
 
-    info!("{} Starting hyprps monitoring", cfg.dev_block);
+
+    info!("{} Starting hyprps monitoring", cfg.get_device());
 
     let monitor = udev::MonitorBuilder::new()?
         .match_subsystem("input")?
@@ -84,15 +77,15 @@ fn main() -> io::Result<()> {
 
                 if action == "add" {
                     if let Some(node) = node {
-                        if node.as_ref() == cfg.dev_block {
-                            info!("{} added!", cfg.dev_block);
+                        if node.as_ref() == cfg.get_device() {
+                            info!("{} added!", cfg.get_device());
                             ensure_launcher_running(&cfg);
                         }
                     }
                 } else if action == "remove" {
                     if let Some(node) = node {
-                        if node.as_ref() == cfg.dev_block {
-                            info!("{} removed!", cfg.dev_block);
+                        if node.as_ref() == cfg.get_device() {
+                            info!("{} removed!", cfg.get_device());
                         }
                     }
                 }
