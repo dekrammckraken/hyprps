@@ -1,3 +1,4 @@
+use log::kv::Error;
 use log::{LevelFilter, error, info};
 use nix::poll::{PollFd, PollFlags, PollTimeout, poll};
 use std::os::fd::AsFd;
@@ -46,19 +47,27 @@ fn disconnect_device(mac: &str) -> io::Result<()> {
         Err(io::Error::other("Disconnect failed"))
     }
 }
+
 fn main() -> io::Result<()> {
     JournalLog::new().unwrap().install().unwrap();
     log::set_max_level(LevelFilter::Info);
 
-    let cfg = Config::from_file(CFG_FILE);
-    
+    let cfg = match Config::from_file(CFG_FILE) {
+        Ok(cfg) =>cfg,
+        Err(_e) => {
+            error!("Something in the config is wrong. Perhaps you should check it.");
+            std::process::exit(1)
+        }
+    };
+
     if !cfg.validate() {
-        eprintln!("{}", "Invalid configuration");
+        error!("Some values in the config are wrong. Perhaps you should fill them in.");
         std::process::exit(1)
     }
-
-
-    info!("{} Starting hyprps monitoring", cfg.get_device());
+    info!("Configuration filed validated and ready to go!");
+    info!("Hyprps is monitoring device {}-{} and {} will start in lounge mode {}.", 
+        cfg.get_device(), cfg.get_mac(), cfg.get_launcher(),cfg.get_lounge().get_or_insert("NO")
+    );
 
     let monitor = udev::MonitorBuilder::new()?
         .match_subsystem("input")?

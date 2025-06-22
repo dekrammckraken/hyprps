@@ -9,16 +9,35 @@ pub struct Config {
     mac: String,
 }
 
+#[derive(Debug)]
+pub enum Error {
+    IO(std::io::Error),
+    Serialization(toml::de::Error),
+    InvalidHome
+}
+
+impl From<std::io::Error> for Error {
+    fn from(e: std::io::Error) ->Self {
+        Error::IO(e)
+    }
+}
+impl From<toml::de::Error> for Error {
+    fn from(e: toml::de::Error) -> Self {
+        Error::Serialization(e)
+    }
+}
 impl Config {
-    pub fn from_file(cfg_file: &str) -> Config {
-        let mut home_path = home_dir().ok_or("failed").unwrap();
+    pub fn from_file(cfg_file: &str) -> Result<Config, Error> {
+       
+        let mut home_path = home_dir()
+            .ok_or(Error::InvalidHome)?;
+        
         home_path.push(&cfg_file);
 
-        let config_string = fs::read_to_string(&home_path).expect("INVALID_CONFIG_FILE");
+        let path = fs::read_to_string(&home_path)?;
+        let conf = toml::from_str(&path)?;
 
-        let conf = toml::from_str(&config_string);
-
-        conf.unwrap()
+        Ok(conf)
     }
 
     pub fn get_device(&self) -> &str {
