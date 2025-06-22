@@ -1,4 +1,3 @@
-use log::kv::Error;
 use log::{LevelFilter, error, info};
 use nix::poll::{PollFd, PollFlags, PollTimeout, poll};
 use std::os::fd::AsFd;
@@ -64,8 +63,7 @@ fn main() -> io::Result<()> {
         error!("Some values in the config are wrong. Perhaps you should fill them in.");
         std::process::exit(1)
     }
-    info!("Configuration filed validated and ready to go!");
-    info!("Hyprps is monitoring device {}-{} and {} will start in lounge mode {}.", 
+    info!("Configuration file validated and ready to go! Hyprps is monitoring device {}-{} and {} will start in lounge mode {}.", 
         cfg.get_device(), cfg.get_mac(), cfg.get_launcher(),cfg.get_lounge().get_or_insert("NO")
     );
 
@@ -87,19 +85,19 @@ fn main() -> io::Result<()> {
                 if action == "add" {
                     if let Some(node) = node {
                         if node.as_ref() == cfg.get_device() {
-                            info!("{} added!", cfg.get_device());
+                            info!("{} We detected you pressed a button on your controller, didn’t you? Sorry, someone is playing instead of you.", cfg.get_device());
                             ensure_launcher_running(&cfg);
                         }
                     }
                 } else if action == "remove" {
                     if let Some(node) = node {
                         if node.as_ref() == cfg.get_device() {
-                            info!("{} removed!", cfg.get_device());
+                            info!("{} Time to do some other stuff.", cfg.get_device());
                         }
                     }
                 }
             }
         }
-        info!("hyprps has been closed.");
+        info!("Hyprps has shut down. What a shame.");
     }
 }
