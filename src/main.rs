@@ -4,12 +4,10 @@ use std::os::fd::AsFd;
 use std::process::Command;
 use std::{io};
 use systemd_journal_logger::JournalLog;
+pub mod config;
+use config::Config;
 
 const CFG_FILE: &str = ".config/hyprps/config";
-
-pub mod config;
-
-use config::Config;
 
 fn ensure_launcher_running(cfg: &Config) {
     let running = Command::new("pgrep")
@@ -46,7 +44,6 @@ fn disconnect_device(mac: &str) -> io::Result<()> {
         Err(io::Error::other("Disconnect failed"))
     }
 }
-
 fn main() -> io::Result<()> {
     JournalLog::new().unwrap().install().unwrap();
     log::set_max_level(LevelFilter::Info);
