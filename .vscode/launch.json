@@ -7,15 +7,15 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug executable 'hyprps'",
+            "name": "Debug executable 'suprps'",
             "cargo": {
                 "args": [
                     "build",
-                    "--bin=hyprps",
-                    "--package=hyprps"
+                    "--bin=suprps",
+                    "--package=suprps"
                 ],
                 "filter": {
-                    "name": "hyprps",
+                    "name": "suprps",
                     "kind": "bin"
                 }
             },
@@ -25,16 +25,16 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug unit tests in executable 'hyprps'",
+            "name": "Debug unit tests in executable 'suprps'",
             "cargo": {
                 "args": [
                     "test",
                     "--no-run",
-                    "--bin=hyprps",
-                    "--package=hyprps"
+                    "--bin=suprps",
+                    "--package=suprps"
                 ],
                 "filter": {
-                    "name": "hyprps",
+                    "name": "suprps",
                     "kind": "bin"
                 }
             },

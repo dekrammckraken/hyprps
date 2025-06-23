@@ -81,19 +81,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d231dfb89cfffdbc30e7fc41579ed6066ad03abda9e567ccafae602b97ec5024"
 
 [[package]]
-name = "hyprps"
-version = "0.1.0"
-dependencies = [
- "dirs",
- "log",
- "nix",
- "serde",
- "systemd-journal-logger",
- "toml",
- "udev",
-]
-
-[[package]]
 name = "indexmap"
 version = "2.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -251,6 +238,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "87607cb1398ed59d48732e575a4c28a7a8ebf2454b964fe3f224f2afc07909e1"
 dependencies = [
  "serde",
+]
+
+[[package]]
+name = "suprps"
+version = "0.1.0"
+dependencies = [
+ "dirs",
+ "log",
+ "nix",
+ "serde",
+ "systemd-journal-logger",
+ "toml",
+ "udev",
 ]
 
 [[package]]
