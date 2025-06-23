@@ -1,4 +1,4 @@
-# hyprps
+# ascps
 
 Press the **PS button** on your controller to launch your preferred game launcher.  
 This tool, created for personal use, simplifies startup inside a virtual machine for those who prefer an ultra-minimal interface.  
@@ -18,9 +18,9 @@ cp ./target/release/hyprps /your/desired/path
 ```
 
 ### Run in Hyprland
-Add this line to your Hyprland config: `exec-once = hyprps`
+Add this line to your Hyprland config: `exec-once = ascps`
 
-**Make sure `hyprps` is in your PATH.**
+**Make sure `ascps` is in your PATH.**
 
 ## See log
-journalctl -e -t hyprps -f
+journalctl -e -t ascps -f
